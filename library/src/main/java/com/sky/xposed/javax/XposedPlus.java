@@ -26,14 +26,14 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 public class XposedPlus {
 
-    XC_LoadPackage.LoadPackageParam packageParam;
-    ThrowableListener throwableListener;
+    private XC_LoadPackage.LoadPackageParam mPackageParam;
+    private MethodHook.ThrowableCallback mThrowableCallback;
 
     private static XposedPlus sXposedPlus;
 
-    private XposedPlus(XC_LoadPackage.LoadPackageParam packageParam, ThrowableListener throwableListener) {
-        this.packageParam = packageParam;
-        this.throwableListener = throwableListener;
+    private XposedPlus(XC_LoadPackage.LoadPackageParam packageParam, MethodHook.ThrowableCallback throwableCallback) {
+        mPackageParam = packageParam;
+        mThrowableCallback = throwableCallback;
     }
 
     public static void setDefaultInstance(XposedPlus xposedPlus) {
@@ -53,11 +53,11 @@ public class XposedPlus {
             sXposedPlus = new Builder(packageParam).build();
         }
 
-        if (sXposedPlus.packageParam == packageParam) {
+        if (sXposedPlus.mPackageParam == packageParam) {
             return sXposedPlus;
         }
 
-        return new XposedPlus(packageParam, sXposedPlus.throwableListener);
+        return new XposedPlus(packageParam, sXposedPlus.mThrowableCallback);
     }
 
     public MethodHook findMethod(Class<?> clazz, String methodName, Object... parameterTypes) {
@@ -77,7 +77,7 @@ public class XposedPlus {
     }
 
     public Class<?> findClass(String className) {
-        return XposedHelpers.findClass(className, packageParam.classLoader);
+        return XposedHelpers.findClass(className, mPackageParam.classLoader);
     }
 
     private static class InternalMethodHook implements MethodHook {
@@ -85,7 +85,7 @@ public class XposedPlus {
         private boolean constructor;
         private XposedPlus xposedPlus;
         private XC_LoadPackage.LoadPackageParam packageParam;
-        private ThrowableListener throwableListener;
+        private MethodHook.ThrowableCallback throwableCallback;
         private String className;
         private Class<?> clazz;
         private String methodName;
@@ -115,28 +115,28 @@ public class XposedPlus {
             this.clazz = clazz;
             this.methodName = methodName;
             this.parameterTypes = parameterTypes;
-            this.packageParam = xposedPlus.packageParam;
-            this.throwableListener = xposedPlus.throwableListener;
+            this.packageParam = xposedPlus.mPackageParam;
+            this.throwableCallback = xposedPlus.mThrowableCallback;
         }
 
         @Override
-        public XC_MethodHook.Unhook beforeHook(BeforeHookCallback callback) {
+        public XC_MethodHook.Unhook before(BeforeCallback callback) {
 
             if (clazz == null || TextUtils.isEmpty(className)) {
                 throw new IllegalArgumentException("clazz or className must not be null.");
             }
             return handlerHook(
-                    new InternalMethodHookAdapter(callback, xposedPlus.throwableListener));
+                    new InternalMethodHookAdapter(callback, xposedPlus.mThrowableCallback));
         }
 
         @Override
-        public XC_MethodHook.Unhook afterHook(AfterHookCallback callback) {
+        public XC_MethodHook.Unhook after(AfterCallback callback) {
 
             if (clazz == null || TextUtils.isEmpty(className)) {
                 throw new IllegalArgumentException("clazz or className must not be null.");
             }
             return handlerHook(
-                    new InternalMethodHookAdapter(callback, xposedPlus.throwableListener));
+                    new InternalMethodHookAdapter(callback, xposedPlus.mThrowableCallback));
         }
 
         @Override
@@ -146,7 +146,7 @@ public class XposedPlus {
                 throw new IllegalArgumentException("clazz or className must not be null.");
             }
             return handlerHook(
-                    new InternalReplacementAdapter(callback, xposedPlus.throwableListener));
+                    new InternalReplacementAdapter(callback, xposedPlus.mThrowableCallback));
         }
 
         @Override
@@ -156,7 +156,7 @@ public class XposedPlus {
                 throw new IllegalArgumentException("clazz or className must not be null.");
             }
             return handlerHook(
-                    new InternalMethodHookAdapter(callback, xposedPlus.throwableListener));
+                    new InternalMethodHookAdapter(callback, xposedPlus.mThrowableCallback));
         }
 
         private XC_MethodHook.Unhook handlerHook(XC_MethodHook methodHook) {
@@ -169,7 +169,7 @@ public class XposedPlus {
                 return XposedHelpers.findAndHookMethod(getHookClass(), methodName,
                         mergeParameterTypesAndCallback(parameterTypes, methodHook));
             } catch (Throwable tr) {
-                throwableListener.onThrowable(tr);
+                throwableCallback.onThrowable(tr);
             }
             return null;
         }
@@ -180,7 +180,7 @@ public class XposedPlus {
                 return XposedHelpers.findAndHookConstructor(getHookClass(),
                         mergeParameterTypesAndCallback(parameterTypes, methodHook));
             } catch (Throwable tr) {
-                throwableListener.onThrowable(tr);
+                throwableCallback.onThrowable(tr);
             }
             return null;
         }
@@ -208,31 +208,31 @@ public class XposedPlus {
 
     public static class InternalMethodHookAdapter extends XC_MethodHook {
 
-        private BeforeHookCallback beforeCallback;
-        private AfterHookCallback afterCallback;
-        private ThrowableListener listener;
+        private MethodHook.BeforeCallback beforeCallback;
+        private MethodHook.AfterCallback afterCallback;
+        private MethodHook.ThrowableCallback throwableCallback;
 
         public InternalMethodHookAdapter(
-                HookCallback callback, ThrowableListener listener) {
-            this(callback, callback, listener);
+                MethodHook.HookCallback hookCallback, MethodHook.ThrowableCallback throwableCallback) {
+            this(hookCallback, hookCallback, throwableCallback);
         }
 
         public InternalMethodHookAdapter(
-                BeforeHookCallback callback, ThrowableListener listener) {
-            this(callback, null, listener);
+                MethodHook.BeforeCallback beforeCallback, MethodHook.ThrowableCallback throwableCallback) {
+            this(beforeCallback, null, throwableCallback);
         }
 
         public InternalMethodHookAdapter(
-                AfterHookCallback callback, ThrowableListener listener) {
-            this(null, callback, listener);
+                MethodHook.AfterCallback afterCallback, MethodHook.ThrowableCallback throwableCallback) {
+            this(null, afterCallback, throwableCallback);
         }
 
         public InternalMethodHookAdapter(
-                BeforeHookCallback beforeCallback,
-                AfterHookCallback afterCallback, ThrowableListener listener) {
+                MethodHook.BeforeCallback beforeCallback,
+                MethodHook.AfterCallback afterCallback, MethodHook.ThrowableCallback throwableCallback) {
             this.beforeCallback = beforeCallback;
             this.afterCallback = afterCallback;
-            this.listener = listener;
+            this.throwableCallback = throwableCallback;
         }
 
         @Override
@@ -242,9 +242,9 @@ public class XposedPlus {
             if (beforeCallback == null) return;
 
             try {
-                beforeCallback.onBeforeHook(param);
+                beforeCallback.onBefore(param);
             } catch (Throwable tr) {
-                listener.onThrowable(tr);
+                throwableCallback.onThrowable(tr);
             }
         }
 
@@ -255,35 +255,36 @@ public class XposedPlus {
             if (afterCallback == null) return;
 
             try {
-                afterCallback.onAfterHook(param);
+                afterCallback.onAfter(param);
             } catch (Throwable tr) {
-                listener.onThrowable(tr);
+                throwableCallback.onThrowable(tr);
             }
         }
     }
 
     public static class InternalReplacementAdapter extends XC_MethodReplacement {
 
-        private ReplaceCallback callback;
-        private ThrowableListener listener;
+        private MethodHook.ReplaceCallback replaceCallback;
+        private MethodHook.ThrowableCallback throwableCallback;
 
-        public InternalReplacementAdapter(ReplaceCallback callback, ThrowableListener listener) {
-            this.callback = callback;
-            this.listener = listener;
+        public InternalReplacementAdapter(MethodHook.ReplaceCallback replaceCallback,
+                                          MethodHook.ThrowableCallback throwableCallback) {
+            this.replaceCallback = replaceCallback;
+            this.throwableCallback = throwableCallback;
         }
 
         @Override
         protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
             try {
-                return callback.onReplace(param);
+                return replaceCallback.onReplace(param);
             } catch (Throwable tr) {
-                listener.onThrowable(tr);
+                throwableCallback.onThrowable(tr);
             }
             return null;
         }
     }
 
-    public static class InternalThrowableListener implements ThrowableListener {
+    public static class InternalThrowableCallback implements MethodHook.ThrowableCallback {
 
         @Override
         public void onThrowable(Throwable tr) {
@@ -292,66 +293,31 @@ public class XposedPlus {
         }
     }
 
-    public interface MethodHook {
-
-        XC_MethodHook.Unhook beforeHook(BeforeHookCallback callback);
-
-        XC_MethodHook.Unhook afterHook(AfterHookCallback callback);
-
-        XC_MethodHook.Unhook replace(ReplaceCallback callback);
-
-        XC_MethodHook.Unhook hook(HookCallback callback);
-    }
-
-    public interface HookCallback extends BeforeHookCallback, AfterHookCallback {
-
-    }
-
-    public interface BeforeHookCallback {
-
-        void onBeforeHook(XC_MethodHook.MethodHookParam param);
-    }
-
-    public interface AfterHookCallback {
-
-        void onAfterHook(XC_MethodHook.MethodHookParam param);
-    }
-
-    public interface ReplaceCallback {
-
-        Object onReplace(XC_MethodHook.MethodHookParam param);
-    }
-
-    public interface ThrowableListener {
-
-        void onThrowable(Throwable tr);
-    }
-
     public static class Builder {
 
-        private final XC_LoadPackage.LoadPackageParam packageParam;
-        private ThrowableListener throwableListener;
+        private final XC_LoadPackage.LoadPackageParam mPackageParam;
+        private MethodHook.ThrowableCallback mThrowableCallback;
 
         public Builder(XC_LoadPackage.LoadPackageParam packageParam) {
-            this.packageParam = packageParam;
+            mPackageParam = packageParam;
         }
 
-        public Builder throwableListener(ThrowableListener throwableListener) {
-            this.throwableListener = throwableListener;
+        public Builder throwableCallback(MethodHook.ThrowableCallback callback) {
+            mThrowableCallback = callback;
             return this;
         }
 
         public XposedPlus build() {
 
-            if (packageParam == null) {
+            if (mPackageParam == null) {
                 throw new IllegalArgumentException("LoadPackageParam must not be null.");
             }
 
-            if (throwableListener == null) {
-                throwableListener = new InternalThrowableListener();
+            if (mThrowableCallback == null) {
+                mThrowableCallback = new InternalThrowableCallback();
             }
 
-            return new XposedPlus(packageParam, throwableListener);
+            return new XposedPlus(mPackageParam, mThrowableCallback);
         }
     }
 }
