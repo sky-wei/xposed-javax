@@ -27,7 +27,7 @@ dependencies {
 }
 ```
 
-Step 2. Use
+Step 3. Use
 
 ```
 XposedPlus.setDefaultInstance(new XposedPlus.Builder(LoadPackageParam).build());
