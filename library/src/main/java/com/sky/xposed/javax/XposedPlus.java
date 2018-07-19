@@ -100,7 +100,7 @@ public class XposedPlus {
         }
 
         public InternalMethodHook(XposedPlus xposedPlus, String className, String methodName, Object[] parameterTypes) {
-            this(false, xposedPlus, className, null, null, parameterTypes);
+            this(false, xposedPlus, className, null, methodName, parameterTypes);
         }
 
         public InternalMethodHook(XposedPlus xposedPlus, Class<?> clazz, String methodName, Object[] parameterTypes) {
@@ -120,49 +120,46 @@ public class XposedPlus {
         }
 
         @Override
-        public XC_MethodHook.Unhook before(BeforeCallback callback) {
-
-            if (clazz == null || TextUtils.isEmpty(className)) {
-                throw new IllegalArgumentException("clazz or className must not be null.");
-            }
+        public XC_MethodHook.Unhook hook(BeforeCallback callback) {
             return handlerHook(
                     new InternalMethodHookAdapter(callback, xposedPlus.mThrowableCallback));
         }
 
         @Override
-        public XC_MethodHook.Unhook after(AfterCallback callback) {
-
-            if (clazz == null || TextUtils.isEmpty(className)) {
-                throw new IllegalArgumentException("clazz or className must not be null.");
-            }
+        public XC_MethodHook.Unhook hook(AfterCallback callback) {
             return handlerHook(
                     new InternalMethodHookAdapter(callback, xposedPlus.mThrowableCallback));
         }
 
         @Override
         public XC_MethodHook.Unhook replace(ReplaceCallback callback) {
-
-            if (clazz == null || TextUtils.isEmpty(className)) {
-                throw new IllegalArgumentException("clazz or className must not be null.");
-            }
             return handlerHook(
                     new InternalReplacementAdapter(callback, xposedPlus.mThrowableCallback));
         }
 
         @Override
         public XC_MethodHook.Unhook hook(HookCallback callback) {
-
-            if (clazz == null || TextUtils.isEmpty(className)) {
-                throw new IllegalArgumentException("clazz or className must not be null.");
-            }
             return handlerHook(
                     new InternalMethodHookAdapter(callback, xposedPlus.mThrowableCallback));
         }
 
+        /**
+         * 处理Hook
+         * @param methodHook
+         * @return
+         */
         private XC_MethodHook.Unhook handlerHook(XC_MethodHook methodHook) {
+            if (clazz == null && TextUtils.isEmpty(className)) {
+                throw new IllegalArgumentException("clazz and className is null");
+            }
             return constructor ? handlerConstructor(methodHook) : handlerMethod(methodHook);
         }
 
+        /**
+         * 处理Hook类的方法
+         * @param methodHook
+         * @return
+         */
         private XC_MethodHook.Unhook handlerMethod(XC_MethodHook methodHook) {
 
             try {
@@ -174,6 +171,11 @@ public class XposedPlus {
             return null;
         }
 
+        /**
+         * 处理Hook类的构造方法
+         * @param methodHook
+         * @return
+         */
         private XC_MethodHook.Unhook handlerConstructor(XC_MethodHook methodHook) {
 
             try {
@@ -185,6 +187,10 @@ public class XposedPlus {
             return null;
         }
 
+        /**
+         * 获取Hook的Class
+         * @return
+         */
         private Class<?> getHookClass() {
             if (clazz == null) {
                 clazz = XposedHelpers.findClass(className, packageParam.classLoader);
@@ -192,6 +198,12 @@ public class XposedPlus {
             return clazz;
         }
 
+        /**
+         * 把参数与回调的类进行合并返回成Object[]数组
+         * @param parameterTypes 参数数组
+         * @param methodHook Hook的回调类
+         * @return
+         */
         private Object[] mergeParameterTypesAndCallback(Object[] parameterTypes, XC_MethodHook methodHook) {
 
             if (parameterTypes == null || parameterTypes.length == 0) {

@@ -23,9 +23,9 @@ import de.robv.android.xposed.XC_MethodHook;
  */
 public interface MethodHook {
 
-    XC_MethodHook.Unhook before(BeforeCallback callback);
+    XC_MethodHook.Unhook hook(BeforeCallback callback);
 
-    XC_MethodHook.Unhook after(AfterCallback callback);
+    XC_MethodHook.Unhook hook(AfterCallback callback);
 
     XC_MethodHook.Unhook replace(ReplaceCallback callback);
 
