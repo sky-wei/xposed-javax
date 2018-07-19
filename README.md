@@ -27,6 +27,45 @@ dependencies {
 }
 ```
 
+Step 2. Use
+
+```
+XposedPlus.setDefaultInstance(new XposedPlus.Builder(LoadPackageParam).build());
+
+XposedPlus.get()
+        .findMethod("className", "methodName", "paramTypes")
+        .hook(new MethodHook.AfterCallback() {
+            @Override
+            public void onAfter(XC_MethodHook.MethodHookParam methodHookParam) {
+                // ....
+            }
+    }); 
+    
+XposedPlus.get()
+        .findMethod("className", "methodName", "paramTypes")
+        .hook(new MethodHook.HookCallback() {
+            @Override
+            public void onAfter(XC_MethodHook.MethodHookParam methodHookParam) {
+                // ....
+            }
+
+            @Override
+            public void onBefore(XC_MethodHook.MethodHookParam methodHookParam) {
+                // ....
+            }
+    });  
+    
+XposedPlus.with(LoadPackageParam)
+        .findConstructor("className", "paramTypes")
+        .hook(new MethodHook.BeforeCallback() {
+            @Override
+            public void onBefore(XC_MethodHook.MethodHookParam methodHookParam) {
+                // ....
+            }
+        });       
+```
+
+
 
 ## License
 
