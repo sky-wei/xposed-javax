@@ -83,7 +83,6 @@ public class XposedPlus {
     private static class InternalMethodHook implements MethodHook {
 
         private boolean constructor;
-        private XposedPlus xposedPlus;
         private XC_LoadPackage.LoadPackageParam packageParam;
         private MethodHook.ThrowableCallback throwableCallback;
         private String className;
@@ -110,7 +109,6 @@ public class XposedPlus {
         public InternalMethodHook(boolean constructor, XposedPlus xposedPlus, String className,
                                   Class<?> clazz, String methodName, Object[] parameterTypes) {
             this.constructor = constructor;
-            this.xposedPlus = xposedPlus;
             this.className = className;
             this.clazz = clazz;
             this.methodName = methodName;
@@ -122,25 +120,31 @@ public class XposedPlus {
         @Override
         public XC_MethodHook.Unhook hook(BeforeCallback callback) {
             return handlerHook(
-                    new InternalMethodHookAdapter(callback, xposedPlus.mThrowableCallback));
+                    new InternalMethodHookAdapter(callback, throwableCallback));
         }
 
         @Override
         public XC_MethodHook.Unhook hook(AfterCallback callback) {
             return handlerHook(
-                    new InternalMethodHookAdapter(callback, xposedPlus.mThrowableCallback));
+                    new InternalMethodHookAdapter(callback, throwableCallback));
         }
 
         @Override
         public XC_MethodHook.Unhook replace(ReplaceCallback callback) {
             return handlerHook(
-                    new InternalReplacementAdapter(callback, xposedPlus.mThrowableCallback));
+                    new InternalReplacementAdapter(callback, throwableCallback));
         }
 
         @Override
         public XC_MethodHook.Unhook hook(HookCallback callback) {
             return handlerHook(
-                    new InternalMethodHookAdapter(callback, xposedPlus.mThrowableCallback));
+                    new InternalMethodHookAdapter(callback, throwableCallback));
+        }
+
+        @Override
+        public MethodHook throwable(ThrowableCallback callback) {
+            this.throwableCallback = callback;
+            return this;
         }
 
         /**

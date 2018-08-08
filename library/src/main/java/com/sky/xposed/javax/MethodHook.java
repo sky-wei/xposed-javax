@@ -31,6 +31,7 @@ public interface MethodHook {
 
     XC_MethodHook.Unhook hook(HookCallback callback);
 
+    MethodHook throwable(ThrowableCallback callback);
 
     interface HookCallback extends BeforeCallback, AfterCallback {
 
