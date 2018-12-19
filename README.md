@@ -23,7 +23,7 @@ Step 2. Add the dependency
 
 ```
 dependencies {
-        implementation 'com.github.sky-wei:xposed-javax:1.0.0'
+        implementation 'com.github.sky-wei:xposed-javax:1.0.7'
 }
 ```
 
@@ -34,7 +34,7 @@ XposedPlus.setDefaultInstance(new XposedPlus.Builder(LoadPackageParam).build());
 
 XposedPlus.get()
         .findMethod("className", "methodName", "paramTypes")
-        .hook(new MethodHook.AfterCallback() {
+        .after(new MethodHook.AfterCallback() {
             @Override
             public void onAfter(XC_MethodHook.MethodHookParam methodHookParam) {
                 // ....
@@ -57,7 +57,7 @@ XposedPlus.get()
     
 XposedPlus.with(LoadPackageParam)
         .findConstructor("className", "paramTypes")
-        .hook(new MethodHook.BeforeCallback() {
+        .before(new MethodHook.BeforeCallback() {
             @Override
             public void onBefore(XC_MethodHook.MethodHookParam methodHookParam) {
                 // ....

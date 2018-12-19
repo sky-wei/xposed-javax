@@ -23,14 +23,33 @@ import de.robv.android.xposed.XC_MethodHook;
  */
 public interface MethodHook {
 
+    /**
+     * @deprecated
+     * @param callback
+     * @return
+     */
     XC_MethodHook.Unhook hook(BeforeCallback callback);
 
+    /**
+     * @deprecated
+     * @param callback
+     * @return
+     */
     XC_MethodHook.Unhook hook(AfterCallback callback);
+
+    XC_MethodHook.Unhook before(BeforeCallback callback);
+
+    XC_MethodHook.Unhook after(AfterCallback callback);
 
     XC_MethodHook.Unhook replace(ReplaceCallback callback);
 
     XC_MethodHook.Unhook hook(HookCallback callback);
 
+    /**
+     * 异常回调处理
+     * @param callback
+     * @return
+     */
     MethodHook throwable(ThrowableCallback callback);
 
     interface HookCallback extends BeforeCallback, AfterCallback {

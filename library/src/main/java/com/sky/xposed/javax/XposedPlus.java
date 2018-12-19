@@ -119,12 +119,22 @@ public class XposedPlus {
 
         @Override
         public XC_MethodHook.Unhook hook(BeforeCallback callback) {
+            return before(callback);
+        }
+
+        @Override
+        public XC_MethodHook.Unhook hook(AfterCallback callback) {
+            return after(callback);
+        }
+
+        @Override
+        public XC_MethodHook.Unhook before(BeforeCallback callback) {
             return handlerHook(
                     new InternalMethodHookAdapter(callback, throwableCallback));
         }
 
         @Override
-        public XC_MethodHook.Unhook hook(AfterCallback callback) {
+        public XC_MethodHook.Unhook after(AfterCallback callback) {
             return handlerHook(
                     new InternalMethodHookAdapter(callback, throwableCallback));
         }
