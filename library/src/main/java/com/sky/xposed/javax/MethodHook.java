@@ -58,17 +58,17 @@ public interface MethodHook {
 
     interface BeforeCallback {
 
-        void onBefore(XC_MethodHook.MethodHookParam param);
+        void onBefore(XC_MethodHook.MethodHookParam param) throws Throwable;
     }
 
     interface AfterCallback {
 
-        void onAfter(XC_MethodHook.MethodHookParam param);
+        void onAfter(XC_MethodHook.MethodHookParam param) throws Throwable;
     }
 
     interface ReplaceCallback {
 
-        Object onReplace(XC_MethodHook.MethodHookParam param);
+        Object onReplace(XC_MethodHook.MethodHookParam param) throws Throwable;
     }
 
     interface ThrowableCallback {
