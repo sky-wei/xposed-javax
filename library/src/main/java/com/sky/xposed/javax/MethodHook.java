@@ -28,22 +28,22 @@ public interface MethodHook {
      * @param callback
      * @return
      */
-    XC_MethodHook.Unhook hook(BeforeCallback callback);
+    Unhook hook(BeforeCallback callback);
 
     /**
      * @deprecated
      * @param callback
      * @return
      */
-    XC_MethodHook.Unhook hook(AfterCallback callback);
+    Unhook hook(AfterCallback callback);
 
-    XC_MethodHook.Unhook before(BeforeCallback callback);
+    Unhook before(BeforeCallback callback);
 
-    XC_MethodHook.Unhook after(AfterCallback callback);
+    Unhook after(AfterCallback callback);
 
-    XC_MethodHook.Unhook replace(ReplaceCallback callback);
+    Unhook replace(ReplaceCallback callback);
 
-    XC_MethodHook.Unhook hook(HookCallback callback);
+    Unhook hook(HookCallback callback);
 
     /**
      * 异常回调处理
@@ -51,6 +51,13 @@ public interface MethodHook {
      * @return
      */
     MethodHook throwable(ThrowableCallback callback);
+
+    /**
+     * 处理所有的方法
+     * @return
+     */
+    MethodHook multiple();
+
 
     interface HookCallback extends BeforeCallback, AfterCallback {
 
@@ -74,5 +81,10 @@ public interface MethodHook {
     interface ThrowableCallback {
 
         void onThrowable(Throwable tr);
+    }
+
+    interface Unhook {
+
+        void unhook();
     }
 }

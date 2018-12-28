@@ -18,6 +18,8 @@ package com.sky.xposed.javax;
 
 import android.text.TextUtils;
 
+import java.util.Set;
+
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XC_MethodReplacement;
 import de.robv.android.xposed.XposedBridge;
@@ -82,6 +84,7 @@ public class XposedPlus {
 
     private static class InternalMethodHook implements MethodHook {
 
+        private boolean multiple;
         private boolean constructor;
         private XC_LoadPackage.LoadPackageParam packageParam;
         private MethodHook.ThrowableCallback throwableCallback;
@@ -118,35 +121,35 @@ public class XposedPlus {
         }
 
         @Override
-        public XC_MethodHook.Unhook hook(BeforeCallback callback) {
+        public Unhook hook(BeforeCallback callback) {
             return before(callback);
         }
 
         @Override
-        public XC_MethodHook.Unhook hook(AfterCallback callback) {
+        public Unhook hook(AfterCallback callback) {
             return after(callback);
         }
 
         @Override
-        public XC_MethodHook.Unhook before(BeforeCallback callback) {
+        public Unhook before(BeforeCallback callback) {
             return handlerHook(
                     new InternalMethodHookAdapter(callback, throwableCallback));
         }
 
         @Override
-        public XC_MethodHook.Unhook after(AfterCallback callback) {
+        public Unhook after(AfterCallback callback) {
             return handlerHook(
                     new InternalMethodHookAdapter(callback, throwableCallback));
         }
 
         @Override
-        public XC_MethodHook.Unhook replace(ReplaceCallback callback) {
+        public Unhook replace(ReplaceCallback callback) {
             return handlerHook(
                     new InternalReplacementAdapter(callback, throwableCallback));
         }
 
         @Override
-        public XC_MethodHook.Unhook hook(HookCallback callback) {
+        public Unhook hook(HookCallback callback) {
             return handlerHook(
                     new InternalMethodHookAdapter(callback, throwableCallback));
         }
@@ -157,12 +160,21 @@ public class XposedPlus {
             return this;
         }
 
+        @Override
+        public MethodHook multiple() {
+            if (parameterTypes != null) {
+                throw new IllegalArgumentException("parameterTypes is not null");
+            }
+            this.multiple = true;
+            return null;
+        }
+
         /**
          * 处理Hook
          * @param methodHook
          * @return
          */
-        private XC_MethodHook.Unhook handlerHook(XC_MethodHook methodHook) {
+        private Unhook handlerHook(XC_MethodHook methodHook) {
             if (clazz == null && TextUtils.isEmpty(className)) {
                 throw new IllegalArgumentException("clazz and className is null");
             }
@@ -174,11 +186,14 @@ public class XposedPlus {
          * @param methodHook
          * @return
          */
-        private XC_MethodHook.Unhook handlerMethod(XC_MethodHook methodHook) {
+        private Unhook handlerMethod(XC_MethodHook methodHook) {
 
             try {
-                return XposedHelpers.findAndHookMethod(getHookClass(), methodName,
-                        mergeParameterTypesAndCallback(parameterTypes, methodHook));
+                if (multiple) {
+                    return createUnhook(XposedBridge.hookAllMethods(getHookClass(), methodName, methodHook));
+                }
+                return createUnhook(XposedHelpers.findAndHookMethod(
+                        getHookClass(), methodName, mergeParameterTypesAndCallback(parameterTypes, methodHook)));
             } catch (Throwable tr) {
                 throwableCallback.onThrowable(tr);
             }
@@ -190,15 +205,26 @@ public class XposedPlus {
          * @param methodHook
          * @return
          */
-        private XC_MethodHook.Unhook handlerConstructor(XC_MethodHook methodHook) {
+        private Unhook handlerConstructor(XC_MethodHook methodHook) {
 
             try {
-                return XposedHelpers.findAndHookConstructor(getHookClass(),
-                        mergeParameterTypesAndCallback(parameterTypes, methodHook));
+                if (multiple) {
+                    return createUnhook(XposedBridge.hookAllConstructors(getHookClass(), methodHook));
+                }
+                return createUnhook(XposedHelpers.findAndHookConstructor(
+                        getHookClass(), mergeParameterTypesAndCallback(parameterTypes, methodHook)));
             } catch (Throwable tr) {
                 throwableCallback.onThrowable(tr);
             }
             return null;
+        }
+
+        private Unhook createUnhook(XC_MethodHook.Unhook unhook) {
+            return new InternalUnhookAdapter(unhook);
+        }
+
+        private Unhook createUnhook(Set<XC_MethodHook.Unhook> unhooks) {
+            return new InternalUnhookAdapter(unhooks);
         }
 
         /**
@@ -307,6 +333,32 @@ public class XposedPlus {
                 throwableCallback.onThrowable(tr);
             }
             return null;
+        }
+    }
+
+    public static class InternalUnhookAdapter implements MethodHook.Unhook {
+
+        private XC_MethodHook.Unhook unhook;
+        private Set<XC_MethodHook.Unhook> unhooks;
+
+        public InternalUnhookAdapter(XC_MethodHook.Unhook unhook) {
+            this.unhook = unhook;
+        }
+
+        public InternalUnhookAdapter(Set<XC_MethodHook.Unhook> unhooks) {
+            this.unhooks = unhooks;
+        }
+
+        @Override
+        public void unhook() {
+
+            if (unhook != null) unhook.unhook();
+
+            if (unhooks == null) return;
+
+            for (XC_MethodHook.Unhook unhook : unhooks) {
+                unhook.unhook();
+            }
         }
     }
 
