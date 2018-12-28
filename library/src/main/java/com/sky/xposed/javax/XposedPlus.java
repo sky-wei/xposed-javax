@@ -166,7 +166,7 @@ public class XposedPlus {
                 throw new IllegalArgumentException("parameterTypes is not null");
             }
             this.multiple = true;
-            return null;
+            return this;
         }
 
         /**
