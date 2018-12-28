@@ -162,7 +162,7 @@ public class XposedPlus {
 
         @Override
         public MethodHook multiple() {
-            if (parameterTypes != null) {
+            if (parameterTypes != null && parameterTypes.length > 0) {
                 throw new IllegalArgumentException("parameterTypes is not null");
             }
             this.multiple = true;
