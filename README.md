@@ -23,7 +23,7 @@ Step 2. Add the dependency
 
 ```
 dependencies {
-        implementation 'com.github.sky-wei:xposed-javax:1.1.2'
+        implementation 'com.github.sky-wei:xposed-javax:1.1.3'
 }
 ```
 
@@ -62,6 +62,13 @@ XposedPlus.with(LoadPackageParam)
             public void onBefore(XC_MethodHook.MethodHookParam methodHookParam) {
                 // ....
             }
+        }); 
+        
+// java 1.8
+XposedUtil
+        .findMethod("className", "methodName", "paramTypes")
+        .after(param -> {
+            // ...
         });       
 ```
 

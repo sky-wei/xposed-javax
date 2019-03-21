@@ -45,6 +45,8 @@ public interface MethodHook {
 
     Unhook hook(HookCallback callback);
 
+    Unhook hook(BeforeCallback beforeCallback, AfterCallback afterCallback);
+
     /**
      * 异常回调处理
      * @param callback

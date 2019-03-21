@@ -28,13 +28,13 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 public class XposedPlus {
 
-    private XC_LoadPackage.LoadPackageParam mPackageParam;
+    private ClassLoader mClassLoader;
     private MethodHook.ThrowableCallback mThrowableCallback;
 
     private static XposedPlus sXposedPlus;
 
-    private XposedPlus(XC_LoadPackage.LoadPackageParam packageParam, MethodHook.ThrowableCallback throwableCallback) {
-        mPackageParam = packageParam;
+    private XposedPlus(ClassLoader classLoader, MethodHook.ThrowableCallback throwableCallback) {
+        mClassLoader = classLoader;
         mThrowableCallback = throwableCallback;
     }
 
@@ -50,16 +50,20 @@ public class XposedPlus {
     }
 
     public static XposedPlus with(XC_LoadPackage.LoadPackageParam packageParam) {
+        return with(packageParam.classLoader);
+    }
+
+    public static XposedPlus with(ClassLoader classLoader) {
 
         if (sXposedPlus == null) {
-            sXposedPlus = new Builder(packageParam).build();
+            sXposedPlus = new Builder(classLoader).build();
         }
 
-        if (sXposedPlus.mPackageParam == packageParam) {
+        if (sXposedPlus.mClassLoader == classLoader) {
             return sXposedPlus;
         }
 
-        return new XposedPlus(packageParam, sXposedPlus.mThrowableCallback);
+        return new XposedPlus(classLoader, sXposedPlus.mThrowableCallback);
     }
 
     public MethodHook findMethod(Class<?> clazz, String methodName, Object... parameterTypes) {
@@ -79,14 +83,14 @@ public class XposedPlus {
     }
 
     public Class<?> findClass(String className) {
-        return XposedHelpers.findClass(className, mPackageParam.classLoader);
+        return XposedHelpers.findClass(className, mClassLoader);
     }
 
     private static class InternalMethodHook implements MethodHook {
 
         private boolean multiple;
         private boolean constructor;
-        private XC_LoadPackage.LoadPackageParam packageParam;
+        private ClassLoader classLoader;
         private MethodHook.ThrowableCallback throwableCallback;
         private String className;
         private Class<?> clazz;
@@ -116,7 +120,7 @@ public class XposedPlus {
             this.clazz = clazz;
             this.methodName = methodName;
             this.parameterTypes = parameterTypes;
-            this.packageParam = xposedPlus.mPackageParam;
+            this.classLoader = xposedPlus.mClassLoader;
             this.throwableCallback = xposedPlus.mThrowableCallback;
         }
 
@@ -152,6 +156,12 @@ public class XposedPlus {
         public Unhook hook(HookCallback callback) {
             return handlerHook(
                     new InternalMethodHookAdapter(callback, throwableCallback));
+        }
+
+        @Override
+        public Unhook hook(BeforeCallback beforeCallback, AfterCallback afterCallback) {
+            return handlerHook(
+                    new InternalMethodHookAdapter(beforeCallback, afterCallback, throwableCallback));
         }
 
         @Override
@@ -233,7 +243,7 @@ public class XposedPlus {
          */
         private Class<?> getHookClass() {
             if (clazz == null) {
-                clazz = XposedHelpers.findClass(className, packageParam.classLoader);
+                clazz = XposedHelpers.findClass(className, classLoader);
             }
             return clazz;
         }
@@ -373,11 +383,15 @@ public class XposedPlus {
 
     public static class Builder {
 
-        private final XC_LoadPackage.LoadPackageParam mPackageParam;
+        private ClassLoader mClassLoader;
         private MethodHook.ThrowableCallback mThrowableCallback;
 
         public Builder(XC_LoadPackage.LoadPackageParam packageParam) {
-            mPackageParam = packageParam;
+            mClassLoader = packageParam.classLoader;
+        }
+
+        public Builder(ClassLoader classLoader) {
+            mClassLoader = classLoader;
         }
 
         public Builder throwableCallback(MethodHook.ThrowableCallback callback) {
@@ -387,7 +401,7 @@ public class XposedPlus {
 
         public XposedPlus build() {
 
-            if (mPackageParam == null) {
+            if (mClassLoader == null) {
                 throw new IllegalArgumentException("LoadPackageParam must not be null.");
             }
 
@@ -395,7 +409,7 @@ public class XposedPlus {
                 mThrowableCallback = new InternalThrowableCallback();
             }
 
-            return new XposedPlus(mPackageParam, mThrowableCallback);
+            return new XposedPlus(mClassLoader, mThrowableCallback);
         }
     }
 }
