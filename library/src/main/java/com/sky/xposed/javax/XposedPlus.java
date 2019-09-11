@@ -183,8 +183,8 @@ public class XposedPlus {
 
         @Override
         public MethodHook setPriority(int priority) {
-
-            return null;
+            this.priority = priority;
+            return this;
         }
 
         /**
