@@ -60,6 +60,13 @@ public interface MethodHook {
      */
     MethodHook multiple();
 
+    /**
+     * 设置优先级
+     * @param priority {@link de.robv.android.xposed.callbacks.XCallback}
+     * @return
+     */
+    MethodHook setPriority(int priority);
+
 
     interface HookCallback extends BeforeCallback, AfterCallback {
 

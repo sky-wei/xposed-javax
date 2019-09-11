@@ -25,6 +25,7 @@ import de.robv.android.xposed.XC_MethodReplacement;
 import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
+import de.robv.android.xposed.callbacks.XCallback;
 
 public class XposedPlus {
 
@@ -86,7 +87,7 @@ public class XposedPlus {
         return XposedHelpers.findClass(className, mClassLoader);
     }
 
-    private static class InternalMethodHook implements MethodHook {
+    private final static class InternalMethodHook implements MethodHook {
 
         private boolean multiple;
         private boolean constructor;
@@ -96,24 +97,25 @@ public class XposedPlus {
         private Class<?> clazz;
         private String methodName;
         private Object[] parameterTypes;
+        private int priority = XCallback.PRIORITY_DEFAULT;
 
-        public InternalMethodHook(XposedPlus xposedPlus, String className, Object[] parameterTypes) {
+        InternalMethodHook(XposedPlus xposedPlus, String className, Object[] parameterTypes) {
             this(true, xposedPlus, className, null, null, parameterTypes);
         }
 
-        public InternalMethodHook(XposedPlus xposedPlus, Class<?> clazz, Object[] parameterTypes) {
+        InternalMethodHook(XposedPlus xposedPlus, Class<?> clazz, Object[] parameterTypes) {
             this(true, xposedPlus, null, clazz, null, parameterTypes);
         }
 
-        public InternalMethodHook(XposedPlus xposedPlus, String className, String methodName, Object[] parameterTypes) {
+        InternalMethodHook(XposedPlus xposedPlus, String className, String methodName, Object[] parameterTypes) {
             this(false, xposedPlus, className, null, methodName, parameterTypes);
         }
 
-        public InternalMethodHook(XposedPlus xposedPlus, Class<?> clazz, String methodName, Object[] parameterTypes) {
+        InternalMethodHook(XposedPlus xposedPlus, Class<?> clazz, String methodName, Object[] parameterTypes) {
             this(false, xposedPlus, null, clazz, methodName, parameterTypes);
         }
 
-        public InternalMethodHook(boolean constructor, XposedPlus xposedPlus, String className,
+        InternalMethodHook(boolean constructor, XposedPlus xposedPlus, String className,
                                   Class<?> clazz, String methodName, Object[] parameterTypes) {
             this.constructor = constructor;
             this.className = className;
@@ -137,31 +139,31 @@ public class XposedPlus {
         @Override
         public Unhook before(BeforeCallback callback) {
             return handlerHook(
-                    new InternalMethodHookAdapter(callback, throwableCallback));
+                    new InternalMethodHookAdapter(priority, callback, throwableCallback));
         }
 
         @Override
         public Unhook after(AfterCallback callback) {
             return handlerHook(
-                    new InternalMethodHookAdapter(callback, throwableCallback));
+                    new InternalMethodHookAdapter(priority, callback, throwableCallback));
         }
 
         @Override
         public Unhook replace(ReplaceCallback callback) {
             return handlerHook(
-                    new InternalReplacementAdapter(callback, throwableCallback));
+                    new InternalReplacementAdapter(priority, callback, throwableCallback));
         }
 
         @Override
         public Unhook hook(HookCallback callback) {
             return handlerHook(
-                    new InternalMethodHookAdapter(callback, throwableCallback));
+                    new InternalMethodHookAdapter(priority, callback, throwableCallback));
         }
 
         @Override
         public Unhook hook(BeforeCallback beforeCallback, AfterCallback afterCallback) {
             return handlerHook(
-                    new InternalMethodHookAdapter(beforeCallback, afterCallback, throwableCallback));
+                    new InternalMethodHookAdapter(priority, beforeCallback, afterCallback, throwableCallback));
         }
 
         @Override
@@ -177,6 +179,12 @@ public class XposedPlus {
             }
             this.multiple = true;
             return this;
+        }
+
+        @Override
+        public MethodHook setPriority(int priority) {
+
+            return null;
         }
 
         /**
@@ -268,30 +276,31 @@ public class XposedPlus {
         }
     }
 
-    public static class InternalMethodHookAdapter extends XC_MethodHook {
+    public final static class InternalMethodHookAdapter extends XC_MethodHook {
 
         private MethodHook.BeforeCallback beforeCallback;
         private MethodHook.AfterCallback afterCallback;
         private MethodHook.ThrowableCallback throwableCallback;
 
-        public InternalMethodHookAdapter(
+        InternalMethodHookAdapter(int priority,
                 MethodHook.HookCallback hookCallback, MethodHook.ThrowableCallback throwableCallback) {
-            this(hookCallback, hookCallback, throwableCallback);
+            this(priority, hookCallback, hookCallback, throwableCallback);
         }
 
-        public InternalMethodHookAdapter(
+        InternalMethodHookAdapter(int priority,
                 MethodHook.BeforeCallback beforeCallback, MethodHook.ThrowableCallback throwableCallback) {
-            this(beforeCallback, null, throwableCallback);
+            this(priority, beforeCallback, null, throwableCallback);
         }
 
-        public InternalMethodHookAdapter(
+        InternalMethodHookAdapter(int priority,
                 MethodHook.AfterCallback afterCallback, MethodHook.ThrowableCallback throwableCallback) {
-            this(null, afterCallback, throwableCallback);
+            this(priority, null, afterCallback, throwableCallback);
         }
 
-        public InternalMethodHookAdapter(
+        InternalMethodHookAdapter(int priority,
                 MethodHook.BeforeCallback beforeCallback,
                 MethodHook.AfterCallback afterCallback, MethodHook.ThrowableCallback throwableCallback) {
+            super(priority);
             this.beforeCallback = beforeCallback;
             this.afterCallback = afterCallback;
             this.throwableCallback = throwableCallback;
@@ -324,13 +333,14 @@ public class XposedPlus {
         }
     }
 
-    public static class InternalReplacementAdapter extends XC_MethodReplacement {
+    public final static class InternalReplacementAdapter extends XC_MethodReplacement {
 
         private MethodHook.ReplaceCallback replaceCallback;
         private MethodHook.ThrowableCallback throwableCallback;
 
-        public InternalReplacementAdapter(MethodHook.ReplaceCallback replaceCallback,
+        InternalReplacementAdapter(int priority, MethodHook.ReplaceCallback replaceCallback,
                                           MethodHook.ThrowableCallback throwableCallback) {
+            super(priority);
             this.replaceCallback = replaceCallback;
             this.throwableCallback = throwableCallback;
         }
@@ -346,16 +356,16 @@ public class XposedPlus {
         }
     }
 
-    public static class InternalUnhookAdapter implements MethodHook.Unhook {
+    public final static class InternalUnhookAdapter implements MethodHook.Unhook {
 
         private XC_MethodHook.Unhook unhook;
         private Set<XC_MethodHook.Unhook> unhooks;
 
-        public InternalUnhookAdapter(XC_MethodHook.Unhook unhook) {
+        InternalUnhookAdapter(XC_MethodHook.Unhook unhook) {
             this.unhook = unhook;
         }
 
-        public InternalUnhookAdapter(Set<XC_MethodHook.Unhook> unhooks) {
+        InternalUnhookAdapter(Set<XC_MethodHook.Unhook> unhooks) {
             this.unhooks = unhooks;
         }
 
@@ -372,7 +382,7 @@ public class XposedPlus {
         }
     }
 
-    public static class InternalThrowableCallback implements MethodHook.ThrowableCallback {
+    public final static class InternalThrowableCallback implements MethodHook.ThrowableCallback {
 
         @Override
         public void onThrowable(Throwable tr) {
