@@ -92,12 +92,11 @@ public class XposedPlus {
         private boolean multiple;
         private boolean constructor;
         private ClassLoader classLoader;
-        private MethodHook.ThrowableCallback throwableCallback;
         private String className;
         private Class<?> clazz;
         private String methodName;
         private Object[] parameterTypes;
-        private int priority = XCallback.PRIORITY_DEFAULT;
+        private InternalHookParam hookParam;
 
         InternalMethodHook(XposedPlus xposedPlus, String className, Object[] parameterTypes) {
             this(true, xposedPlus, className, null, null, parameterTypes);
@@ -123,7 +122,7 @@ public class XposedPlus {
             this.methodName = methodName;
             this.parameterTypes = parameterTypes;
             this.classLoader = xposedPlus.mClassLoader;
-            this.throwableCallback = xposedPlus.mThrowableCallback;
+            this.hookParam = new InternalHookParam(xposedPlus.mThrowableCallback);
         }
 
         @Override
@@ -138,37 +137,32 @@ public class XposedPlus {
 
         @Override
         public Unhook before(BeforeCallback callback) {
-            return handlerHook(
-                    new InternalMethodHookAdapter(priority, callback, throwableCallback));
+            return handlerHook(new InternalMethodHookAdapter(hookParam, callback));
         }
 
         @Override
         public Unhook after(AfterCallback callback) {
-            return handlerHook(
-                    new InternalMethodHookAdapter(priority, callback, throwableCallback));
+            return handlerHook(new InternalMethodHookAdapter(hookParam, callback));
         }
 
         @Override
         public Unhook replace(ReplaceCallback callback) {
-            return handlerHook(
-                    new InternalReplacementAdapter(priority, callback, throwableCallback));
+            return handlerHook(new InternalReplacementAdapter(hookParam, callback));
         }
 
         @Override
         public Unhook hook(HookCallback callback) {
-            return handlerHook(
-                    new InternalMethodHookAdapter(priority, callback, throwableCallback));
+            return handlerHook(new InternalMethodHookAdapter(hookParam, callback));
         }
 
         @Override
         public Unhook hook(BeforeCallback beforeCallback, AfterCallback afterCallback) {
-            return handlerHook(
-                    new InternalMethodHookAdapter(priority, beforeCallback, afterCallback, throwableCallback));
+            return handlerHook(new InternalMethodHookAdapter(hookParam, beforeCallback, afterCallback));
         }
 
         @Override
         public MethodHook throwable(ThrowableCallback callback) {
-            this.throwableCallback = callback;
+            this.hookParam.throwableCallback = callback;
             return this;
         }
 
@@ -182,8 +176,15 @@ public class XposedPlus {
         }
 
         @Override
-        public MethodHook setPriority(int priority) {
-            this.priority = priority;
+        public MethodHook priority(int priority) {
+            this.hookParam.priority = priority;
+            return this;
+        }
+
+        @Override
+        public MethodHook monitor(int timeOut, MonitorCallback callback) {
+            this.hookParam.timeOut = timeOut;
+            this.hookParam.monitorCallback = callback;
             return this;
         }
 
@@ -213,7 +214,7 @@ public class XposedPlus {
                 return createUnhook(XposedHelpers.findAndHookMethod(
                         getHookClass(), methodName, mergeParameterTypesAndCallback(parameterTypes, methodHook)));
             } catch (Throwable tr) {
-                throwableCallback.onThrowable(tr);
+                hookParam.throwableCallback.onThrowable(tr);
             }
             return null;
         }
@@ -232,7 +233,7 @@ public class XposedPlus {
                 return createUnhook(XposedHelpers.findAndHookConstructor(
                         getHookClass(), mergeParameterTypesAndCallback(parameterTypes, methodHook)));
             } catch (Throwable tr) {
-                throwableCallback.onThrowable(tr);
+                hookParam.throwableCallback.onThrowable(tr);
             }
             return null;
         }
@@ -278,32 +279,32 @@ public class XposedPlus {
 
     public final static class InternalMethodHookAdapter extends XC_MethodHook {
 
+        private InternalHookParam hookParam;
         private MethodHook.BeforeCallback beforeCallback;
         private MethodHook.AfterCallback afterCallback;
-        private MethodHook.ThrowableCallback throwableCallback;
 
-        InternalMethodHookAdapter(int priority,
-                MethodHook.HookCallback hookCallback, MethodHook.ThrowableCallback throwableCallback) {
-            this(priority, hookCallback, hookCallback, throwableCallback);
+        InternalMethodHookAdapter(InternalHookParam hookParam,
+                                  MethodHook.HookCallback hookCallback) {
+            this(hookParam, hookCallback, hookCallback);
         }
 
-        InternalMethodHookAdapter(int priority,
-                MethodHook.BeforeCallback beforeCallback, MethodHook.ThrowableCallback throwableCallback) {
-            this(priority, beforeCallback, null, throwableCallback);
+        InternalMethodHookAdapter(InternalHookParam hookParam,
+                                  MethodHook.BeforeCallback beforeCallback) {
+            this(hookParam, beforeCallback, null);
         }
 
-        InternalMethodHookAdapter(int priority,
-                MethodHook.AfterCallback afterCallback, MethodHook.ThrowableCallback throwableCallback) {
-            this(priority, null, afterCallback, throwableCallback);
+        InternalMethodHookAdapter(InternalHookParam hookParam,
+                                  MethodHook.AfterCallback afterCallback) {
+            this(hookParam, null, afterCallback);
         }
 
-        InternalMethodHookAdapter(int priority,
-                MethodHook.BeforeCallback beforeCallback,
-                MethodHook.AfterCallback afterCallback, MethodHook.ThrowableCallback throwableCallback) {
-            super(priority);
+        InternalMethodHookAdapter(InternalHookParam hookParam,
+                                  MethodHook.BeforeCallback beforeCallback,
+                                  MethodHook.AfterCallback afterCallback) {
+            super(hookParam.priority);
+            this.hookParam = hookParam;
             this.beforeCallback = beforeCallback;
             this.afterCallback = afterCallback;
-            this.throwableCallback = throwableCallback;
         }
 
         @Override
@@ -312,10 +313,15 @@ public class XposedPlus {
 
             if (beforeCallback == null) return;
 
+            if (isMonitorMethod()) {
+                monitorBeforeHookedMethod(param);
+                return;
+            }
+
             try {
                 beforeCallback.onBefore(param);
             } catch (Throwable tr) {
-                throwableCallback.onThrowable(tr);
+                hookParam.throwableCallback.onThrowable(tr);
             }
         }
 
@@ -325,34 +331,104 @@ public class XposedPlus {
 
             if (afterCallback == null) return;
 
+            if (isMonitorMethod()) {
+                monitorAfterHookedMethod(param);
+                return;
+            }
+
             try {
                 afterCallback.onAfter(param);
             } catch (Throwable tr) {
-                throwableCallback.onThrowable(tr);
+                hookParam.throwableCallback.onThrowable(tr);
             }
+        }
+
+        private boolean isMonitorMethod() {
+            return hookParam.timeOut > 0 && hookParam.monitorCallback != null;
+        }
+
+        private void monitorBeforeHookedMethod(MethodHookParam param) {
+
+            long startTime = System.currentTimeMillis();
+
+            try {
+                beforeCallback.onBefore(param);
+            } catch (Throwable tr) {
+                hookParam.throwableCallback.onThrowable(tr);
+            } finally {
+                monitorMethodTimeOut(startTime, param);
+            }
+        }
+
+        private void monitorAfterHookedMethod(MethodHookParam param) {
+
+            long startTime = System.currentTimeMillis();
+
+            try {
+                afterCallback.onAfter(param);
+            } catch (Throwable tr) {
+                hookParam.throwableCallback.onThrowable(tr);
+            } finally {
+                monitorMethodTimeOut(startTime, param);
+            }
+        }
+
+        private void monitorMethodTimeOut(long startTime, MethodHookParam param) {
+            // 消耗的时间
+            long time = System.currentTimeMillis() - startTime;
+            if (time >= hookParam.timeOut) hookParam.monitorCallback.onMethodTimeOut(param);
         }
     }
 
     public final static class InternalReplacementAdapter extends XC_MethodReplacement {
 
+        private InternalHookParam hookParam;
         private MethodHook.ReplaceCallback replaceCallback;
-        private MethodHook.ThrowableCallback throwableCallback;
 
-        InternalReplacementAdapter(int priority, MethodHook.ReplaceCallback replaceCallback,
-                                          MethodHook.ThrowableCallback throwableCallback) {
-            super(priority);
+        InternalReplacementAdapter(InternalHookParam hookParam,
+                                   MethodHook.ReplaceCallback replaceCallback) {
+            super(hookParam.priority);
+            this.hookParam = hookParam;
             this.replaceCallback = replaceCallback;
-            this.throwableCallback = throwableCallback;
         }
 
         @Override
         protected Object replaceHookedMethod(MethodHookParam param) throws Throwable {
+
+            if (isMonitorMethod()) {
+                return monitorReplaceHookedMethod(param);
+            }
+
             try {
                 return replaceCallback.onReplace(param);
             } catch (Throwable tr) {
-                throwableCallback.onThrowable(tr);
+                hookParam.throwableCallback.onThrowable(tr);
             }
             return null;
+        }
+
+        private boolean isMonitorMethod() {
+            return hookParam.timeOut > 0 && hookParam.monitorCallback != null;
+        }
+
+        private Object monitorReplaceHookedMethod(MethodHookParam param) {
+
+            long startTime = System.currentTimeMillis();
+
+            try {
+                return replaceCallback.onReplace(param);
+            } catch (Throwable tr) {
+                hookParam.throwableCallback.onThrowable(tr);
+            } finally {
+                monitorMethodTimeOut(startTime, param);
+            }
+            return null;
+        }
+
+        private void monitorMethodTimeOut(long startTime, MethodHookParam param) {
+            // 消耗的时间
+            long time = System.currentTimeMillis() - startTime;
+            if (time >= hookParam.timeOut) hookParam.monitorCallback.onMethodTimeOut(param);
         }
     }
 
@@ -379,6 +455,18 @@ public class XposedPlus {
             for (XC_MethodHook.Unhook unhook : unhooks) {
                 unhook.unhook();
             }
+        }
+    }
+
+    public static final class InternalHookParam {
+
+        private MethodHook.ThrowableCallback throwableCallback;
+        private int priority = XCallback.PRIORITY_DEFAULT;
+        private int timeOut = 0;
+        private MethodHook.MonitorCallback monitorCallback;
+
+        InternalHookParam(MethodHook.ThrowableCallback throwableCallback) {
+            this.throwableCallback = throwableCallback;
         }
     }
 

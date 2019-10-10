@@ -65,7 +65,14 @@ public interface MethodHook {
      * @param priority {@link de.robv.android.xposed.callbacks.XCallback}
      * @return
      */
-    MethodHook setPriority(int priority);
+    MethodHook priority(int priority);
+
+    /**
+     * 监听方法回调处理时长
+     * @param timeOut
+     * @return
+     */
+    MethodHook monitor(int timeOut, MonitorCallback callback);
 
 
     interface HookCallback extends BeforeCallback, AfterCallback {
@@ -82,14 +89,28 @@ public interface MethodHook {
         void onAfter(XC_MethodHook.MethodHookParam param) throws Throwable;
     }
 
+    /**
+     * 替换的回调方法
+     */
     interface ReplaceCallback {
 
         Object onReplace(XC_MethodHook.MethodHookParam param) throws Throwable;
     }
 
+    /**
+     * 异常回调的方法
+     */
     interface ThrowableCallback {
 
         void onThrowable(Throwable tr);
+    }
+
+    /**
+     * 监听回调的方法
+     */
+    interface MonitorCallback {
+
+        void onMethodTimeOut(XC_MethodHook.MethodHookParam param);
     }
 
     interface Unhook {
