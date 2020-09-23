@@ -19,6 +19,7 @@ package com.sky.xposed.javax;
 import android.text.TextUtils;
 
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XC_MethodReplacement;
@@ -28,6 +29,8 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 import de.robv.android.xposed.callbacks.XCallback;
 
 public class XposedPlus {
+
+    public static final Set<MethodHook.Unhook> sUnhookSet = new CopyOnWriteArraySet<>();
 
     private ClassLoader mClassLoader;
     private MethodHook.ThrowableCallback mThrowableCallback;
@@ -239,11 +242,16 @@ public class XposedPlus {
         }
 
         private Unhook createUnhook(XC_MethodHook.Unhook unhook) {
-            return new InternalUnhookAdapter(unhook);
+            return addToUnhookSet(new InternalUnhookAdapter(unhook));
         }
 
         private Unhook createUnhook(Set<XC_MethodHook.Unhook> unhooks) {
-            return new InternalUnhookAdapter(unhooks);
+            return addToUnhookSet(new InternalUnhookAdapter(unhooks));
+        }
+
+        private Unhook addToUnhookSet(Unhook unhook) {
+            sUnhookSet.add(unhook);
+            return unhook;
         }
 
         /**
