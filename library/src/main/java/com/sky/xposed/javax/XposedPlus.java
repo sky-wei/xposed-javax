@@ -32,8 +32,8 @@ public class XposedPlus {
 
     public static final Set<MethodHook.Unhook> sUnhookSet = new CopyOnWriteArraySet<>();
 
-    private ClassLoader mClassLoader;
-    private MethodHook.ThrowableCallback mThrowableCallback;
+    private final ClassLoader mClassLoader;
+    private final MethodHook.ThrowableCallback mThrowableCallback;
 
     private static XposedPlus sXposedPlus;
 
@@ -93,13 +93,13 @@ public class XposedPlus {
     private final static class InternalMethodHook implements MethodHook {
 
         private boolean multiple;
-        private boolean constructor;
-        private ClassLoader classLoader;
-        private String className;
         private Class<?> clazz;
-        private String methodName;
-        private Object[] parameterTypes;
-        private InternalHookParam hookParam;
+        private final boolean constructor;
+        private final ClassLoader classLoader;
+        private final String className;
+        private final String methodName;
+        private final Object[] parameterTypes;
+        private final InternalHookParam hookParam;
 
         InternalMethodHook(XposedPlus xposedPlus, String className, Object[] parameterTypes) {
             this(true, xposedPlus, className, null, null, parameterTypes);
@@ -287,9 +287,9 @@ public class XposedPlus {
 
     public final static class InternalMethodHookAdapter extends XC_MethodHook {
 
-        private InternalHookParam hookParam;
-        private MethodHook.BeforeCallback beforeCallback;
-        private MethodHook.AfterCallback afterCallback;
+        private final InternalHookParam hookParam;
+        private final MethodHook.BeforeCallback beforeCallback;
+        private final MethodHook.AfterCallback afterCallback;
 
         InternalMethodHookAdapter(InternalHookParam hookParam,
                                   MethodHook.HookCallback hookCallback) {
@@ -390,8 +390,8 @@ public class XposedPlus {
 
     public final static class InternalReplacementAdapter extends XC_MethodReplacement {
 
-        private InternalHookParam hookParam;
-        private MethodHook.ReplaceCallback replaceCallback;
+        private final InternalHookParam hookParam;
+        private final MethodHook.ReplaceCallback replaceCallback;
 
         InternalReplacementAdapter(InternalHookParam hookParam,
                                    MethodHook.ReplaceCallback replaceCallback) {
@@ -489,7 +489,7 @@ public class XposedPlus {
 
     public static class Builder {
 
-        private ClassLoader mClassLoader;
+        private final ClassLoader mClassLoader;
         private MethodHook.ThrowableCallback mThrowableCallback;
 
         public Builder(XC_LoadPackage.LoadPackageParam packageParam) {
