@@ -134,8 +134,6 @@ public class ReflectPlus {
                 return method.invoke(object, args);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             } catch (InvocationTargetException e) {
                 throw new InvocationTargetError(e.getCause());
             }
@@ -165,8 +163,6 @@ public class ReflectPlus {
                 return field.get(object);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
         }
 
@@ -176,8 +172,6 @@ public class ReflectPlus {
                 return field.getBoolean(object);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
         }
 
@@ -187,8 +181,6 @@ public class ReflectPlus {
                 return field.getByte(object);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
         }
 
@@ -198,8 +190,6 @@ public class ReflectPlus {
                 return field.getChar(object);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
         }
 
@@ -209,8 +199,6 @@ public class ReflectPlus {
                 return field.getDouble(object);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
         }
 
@@ -220,8 +208,6 @@ public class ReflectPlus {
                 return field.getFloat(object);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
         }
 
@@ -231,8 +217,6 @@ public class ReflectPlus {
                 return field.getInt(object);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
         }
 
@@ -242,8 +226,6 @@ public class ReflectPlus {
                 return field.getLong(object);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
         }
 
@@ -253,8 +235,6 @@ public class ReflectPlus {
                 return field.getShort(object);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
         }
 
@@ -264,8 +244,6 @@ public class ReflectPlus {
                 field.set(object, value);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
             return getXClass();
         }
@@ -276,8 +254,6 @@ public class ReflectPlus {
                 field.setBoolean(object, value);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
             return getXClass();
         }
@@ -288,8 +264,6 @@ public class ReflectPlus {
                 field.setByte(object, value);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
             return getXClass();
         }
@@ -300,8 +274,6 @@ public class ReflectPlus {
                 field.setChar(object, value);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
             return getXClass();
         }
@@ -312,8 +284,6 @@ public class ReflectPlus {
                 field.setDouble(object, value);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
             return getXClass();
         }
@@ -324,8 +294,6 @@ public class ReflectPlus {
                 field.setFloat(object, value);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
             return getXClass();
         }
@@ -336,8 +304,6 @@ public class ReflectPlus {
                 field.setInt(object, value);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
             return getXClass();
         }
@@ -348,8 +314,6 @@ public class ReflectPlus {
                 field.setLong(object, value);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
             return getXClass();
         }
@@ -360,8 +324,6 @@ public class ReflectPlus {
                 field.setShort(object, value);
             } catch (IllegalAccessException e) {
                 throw new IllegalAccessError(e.getMessage());
-            } catch (IllegalArgumentException e) {
-                throw e;
             }
             return getXClass();
         }
